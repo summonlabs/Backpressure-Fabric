@@ -1,0 +1,37 @@
+# Build trees
+/build/
+/build-*/
+/out/
+cmake-build-*/
+CMakeUserPresets.json
+
+# Visual Studio / MSVC
+.vs/
+*.vcxproj*
+*.sln
+*.user
+*.aps
+*.ipch
+*.pdb
+*.ilk
+*.exp
+*.obj
+*.idb
+*.tlog
+*.log
+*.lastbuildstate
+*.recipe
+
+# Sanitizer / crash artifacts
+asan*.txt
+*.dmp
+*.core
+core.*
+
+# Scratch
+/scratch/
+/tmp/
+/dist/
+/prefix/
+*.tmp
+*.bak

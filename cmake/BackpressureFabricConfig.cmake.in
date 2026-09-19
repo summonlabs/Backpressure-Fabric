@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/BackpressureFabricTargets.cmake")
+
+check_required_components(BackpressureFabric)
+
+set(BackpressureFabric_VERSION "@PROJECT_VERSION@")
+set(BackpressureFabric_CXX_STANDARD "@BPFAB_CXX_STANDARD@")
