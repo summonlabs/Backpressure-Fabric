@@ -416,8 +416,15 @@ Result<Listener> Listener::bind_loopback(std::uint16_t port) {
                           static_cast<std::uint64_t>(last_socket_error()));
   }
   int reuse = 1;
+#if defined(_WIN32)
+  // SO_REUSEADDR on Windows lets a second socket bind a port that is still
+  // listening; exclusive use makes that second bind fail instead.
+  ::setsockopt(s, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, reinterpret_cast<const char*>(&reuse),
+               static_cast<int>(sizeof(reuse)));
+#else
   ::setsockopt(s, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuse),
                static_cast<int>(sizeof(reuse)));
+#endif
   int nodelay = 1;
   ::setsockopt(s, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&nodelay),
                static_cast<int>(sizeof(nodelay)));

@@ -3,10 +3,14 @@
 // Copyright 2026 Summon Software Labs.
 // SPDX-License-Identifier: Apache-2.0
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
+#include <span>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "backpressure/backpressure.hpp"
@@ -382,4 +386,35 @@ BPFAB_TEST(store, stale_temp_files_are_removed_on_open) {
   BPFAB_REQUIRE_RESULT(store, DurableStore::open(config));
   BPFAB_CHECK(store.state().stale_temp_files_removed == 1u);
   BPFAB_CHECK(!std::filesystem::exists(std::filesystem::path(temp)));
+}
+
+BPFAB_TEST(store, an_atomic_write_waits_for_a_reader_to_close) {
+  const std::string directory = bpfab_test::make_scratch_directory("atomic-reader");
+  const std::string path = (std::filesystem::path(directory) / "state.bin").string();
+  const std::string first = "FIRST";
+  const std::string second = "SECOND";
+  BPFAB_REQUIRE(fsutil::write_file_atomic(path, std::as_bytes(std::span(first.data(), first.size()))).ok());
+  bool reader_opened = false;
+  bool written = false;
+  {
+    // Another tool reading the store (an inspection, a scan) holds the file
+    // open while it is replaced, and closes it shortly after.
+    std::ifstream reader(path, std::ios::binary);
+    reader_opened = reader.is_open();
+    std::thread writer([&path, &second, &written] {
+      written = fsutil::write_file_atomic(path, std::as_bytes(std::span(second.data(), second.size()))).ok();
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    reader.close();
+    writer.join();
+  }
+  std::string stored;
+  {
+    std::ifstream in(path, std::ios::binary);
+    stored.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+  }
+  BPFAB_CHECK(reader_opened);
+  // The write is not lost because a reader had the file open for a moment.
+  BPFAB_CHECK(written);
+  BPFAB_CHECK(stored == second);
 }

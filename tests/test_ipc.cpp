@@ -185,3 +185,10 @@ BPFAB_TEST(ipc, process_utilities_report_real_paths) {
   BPFAB_REQUIRE_CODE(wait_process(invalid).status(), ErrorCode::InvalidArgument);
   BPFAB_REQUIRE_CODE(terminate_process(invalid), ErrorCode::InvalidArgument);
 }
+
+BPFAB_TEST(ipc, a_second_listener_cannot_take_a_listening_port) {
+  BPFAB_REQUIRE_RESULT(listener, Listener::bind_loopback(0));
+  // Two coordinators must never share one listening port: the second bind fails.
+  const Result<Listener> second = Listener::bind_loopback(listener.port());
+  BPFAB_CHECK(!second.ok());
+}

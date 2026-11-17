@@ -79,7 +79,10 @@ set(BPFAB_SANITIZER_FLAGS "")
 set(BPFAB_SANITIZER_LINK_FLAGS "")
 if(BPFAB_ENABLE_ASAN)
   if(MSVC)
-    list(APPEND BPFAB_SANITIZER_FLAGS /fsanitize=address)
+    # Debug information is required: without it MSVC warns C5072, which /WX
+    # turns into an error, so the sanitized build did not compile.
+    list(APPEND BPFAB_SANITIZER_FLAGS /fsanitize=address /Zi)
+    list(APPEND BPFAB_SANITIZER_LINK_FLAGS /INCREMENTAL:NO /DEBUG)
   else()
     list(APPEND BPFAB_SANITIZER_FLAGS -fsanitize=address -fno-omit-frame-pointer)
     list(APPEND BPFAB_SANITIZER_LINK_FLAGS -fsanitize=address)
